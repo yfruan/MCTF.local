@@ -17,8 +17,9 @@ package controller;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+
 import network.Handler;
-import network.assist.Serialization;
+import network.assist.Serializer;
 import network.protocol.Event;
 import network.protocol.TouchFlag;
 import network.protocol.Payload;
@@ -28,7 +29,7 @@ import network.protocol.Payload;
  * @author Yifan Ruan (ry222ad@student.lnu.se)
  */
 public class TouchController extends AbstractController{	
-	private ArrayList<String> currentPoints;       
+	private List<String> currentPoints;       
 	private List<PathConfigHook> inPathConfigHooks=new ArrayList<>();
 	private List<PathAddHook> inPathAddHooks=new ArrayList<>();
 	
@@ -59,11 +60,11 @@ public class TouchController extends AbstractController{
 	 */
 	public void registerControllerHandler(){
 		Handler handler=(message)->{				
-			Payload payload= (Payload)Serialization.deserialize(message.getPayload());	
+			Payload payload= (Payload)Serializer.read(message.getPayload(),Payload.class);	
 			switch(payload.getFlag()){
 				case TouchFlag.CONFIG:{
 					@SuppressWarnings("unchecked")
-					HashMap<String,String> configuration=(HashMap<String, String>) Serialization.deserialize((byte[])payload.getData());
+					HashMap<String,String> configuration=(HashMap<String,String>)payload.getData();
 					inPathConfigHooks.forEach(inHook->{
 						inHook.execute(configuration);
 					});
@@ -71,7 +72,7 @@ public class TouchController extends AbstractController{
 				}
 				case TouchFlag.ADD:{
 					@SuppressWarnings("unchecked")
-					ArrayList<String> path=(ArrayList<String>) Serialization.deserialize((byte[])payload.getData());
+					List<String> path=(List<String>)payload.getData();
 					ArrayList<TouchPoint> points=new ArrayList<>();
 					for(String str:path)
 						points.add(new TouchPoint(str));
@@ -95,9 +96,9 @@ public class TouchController extends AbstractController{
 	 * Set configuration
 	 * @param configuration path configuration
 	 */
-	public void configure(HashMap<String,String> configuration){		
-		this.sendReliableMessage(Event.TOUCH, Serialization.serialize(
-				new Payload(TouchFlag.CONFIG, Serialization.serialize(configuration))),null);
+	public void configure(HashMap<String,String> configuration){				
+		this.sendReliableMessage(Event.TOUCH, Serializer.write(
+			new Payload(TouchFlag.CONFIG,configuration)),null);
 	}
 	
 	/**
@@ -123,8 +124,8 @@ public class TouchController extends AbstractController{
 	 * End path and send "PATH" message
 	 */
 	public void endPath(){
-		this.sendReliableMessage(Event.TOUCH, Serialization.serialize(
-				new Payload(TouchFlag.ADD,Serialization.serialize(currentPoints))),null);
+		this.sendReliableMessage(Event.TOUCH, Serializer.write(
+			new Payload(TouchFlag.ADD,currentPoints)),null);
 	}
 	
 	/**

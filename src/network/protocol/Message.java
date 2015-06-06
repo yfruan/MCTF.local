@@ -18,11 +18,16 @@ package network.protocol;
 import java.io.Serializable;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 /**
  * Definition of the formatted message to be delivered
  * @author Yifan Ruan (ry222ad@student.lnu.se)
  */
-public class Message implements Serializable{
+public class Message implements Serializable,KryoSerializable{
 	private static final long serialVersionUID = 1L;
 	
 	private boolean isReliable=false;			// the message reliable or not
@@ -40,7 +45,28 @@ public class Message implements Serializable{
 	private byte[] payload=null;				// actual data 
 	
 	private static AtomicInteger count=new AtomicInteger(0);   // message number count
-	
+		
+	@Override
+	public void read(Kryo kryo, Input input) {
+		this.isReliable=input.readBoolean();
+		this.id=input.readInt();
+		this.senderId=input.readString();
+		this.code=input.readInt();
+		this.repliedMessageId=input.readInt();
+		this.event=input.readInt();
+		this.payload=(byte[])kryo.readClassAndObject(input);
+	}
+
+	@Override
+	public void write(Kryo kryo, Output output) {
+		output.writeBoolean(isReliable);
+		output.writeInt(id);
+		output.writeString(senderId);
+		output.writeInt(code);
+		output.writeInt(repliedMessageId);
+		output.writeInt(event);
+		kryo.writeClassAndObject(output, payload);
+	}
 	
 	public Message(){}
 	

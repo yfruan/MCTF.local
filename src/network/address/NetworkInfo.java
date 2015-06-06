@@ -17,16 +17,38 @@ package network.address;
 
 import java.io.Serializable;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 /**
  * Combination of user public and private endpoints
  * @author Yifan Ruan (ry222ad@student.lnu.se)
  */
-public class NetworkInfo implements Serializable{
+public class NetworkInfo implements Serializable,KryoSerializable{
 	private static final long serialVersionUID = 1L;
 	
 	private String userId;
 	private Endpoint privateEndpoint;
 	private Endpoint publicEndpoint;
+	
+	
+	@Override
+	public void read(Kryo kryo, Input input) {
+		this.userId=input.readString();
+		this.privateEndpoint=(Endpoint)kryo.readClassAndObject(input);
+		this.publicEndpoint=(Endpoint)kryo.readClassAndObject(input);
+	}
+
+	@Override
+	public void write(Kryo kryo, Output output) {
+		output.writeString(userId);
+		kryo.writeClassAndObject(output, privateEndpoint);
+		kryo.writeClassAndObject(output, publicEndpoint);
+	}
+	
+	public NetworkInfo(){}
 	
 	/**
 	 * Constructor

@@ -47,7 +47,7 @@ public class MessageLog{
 	 * @param message the message
 	 */
 	public static void info(int type,Message message){
-		manager.writeLine(count++, System.currentTimeMillis(), message.getId(), type, message.getEvent());
+		manager.writeLine(count++, System.nanoTime()/1000000, message.getId(), type, message.getEvent());
 	}
 	
 	/**

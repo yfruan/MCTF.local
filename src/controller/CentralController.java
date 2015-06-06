@@ -27,13 +27,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+
 import network.Handler;
 import network.Result;
 import network.RUDPImpl;
 import network.address.Endpoint;
 import network.address.NetworkInfo;
 import network.assist.STUNServerClient;
-import network.assist.Serialization;
+import network.assist.Serializer;
+//import network.assist.Serialization;
 import network.assist.TURNServerClient;
 import network.protocol.ConnectFlag;
 import network.protocol.Event;
@@ -194,7 +196,7 @@ public class CentralController extends AbstractController{
 	public void registerControllerHandler(){
 		Handler handler=(message)->{
 			try{				
-				Payload payload= (Payload)Serialization.deserialize(message.getPayload());
+				Payload payload= (Payload)Serializer.read(message.getPayload(),Payload.class);
 				
 				if(payload.getFlag()==ConnectFlag.ESTABLISH){			
 					remoteUserId=message.getSenderId();		
@@ -207,10 +209,10 @@ public class CentralController extends AbstractController{
 							Message reply;
 							if (accept)
 								reply=new Message(userId,Message.REPLY,messageId,
-										Serialization.serialize(new Payload(ConnectFlag.ESTABLISH, verifyNum+1)));
+										Serializer.write(new Payload(ConnectFlag.ESTABLISH, verifyNum+1)));
 							else 
 								reply=new Message(userId,Message.REPLY,messageId,
-										Serialization.serialize(new Payload(ConnectFlag.ESTABLISH, -1)));
+										Serializer.write(new Payload(ConnectFlag.ESTABLISH, -1)));
 							
 							Result result=mainRUDP.sendReliableMessage(reply, remoteEndpoint, null, null);   
 							if(result.getFlag()==Result.RECEIVED && accept){
@@ -223,7 +225,7 @@ public class CentralController extends AbstractController{
 				
 				else if(payload.getFlag()==ConnectFlag.TERMINATE){
 					Message reply=new Message(userId,Message.REPLY,message.getId(),
-							Serialization.serialize(new Payload(ConnectFlag.TERMINATE, (int)payload.getData()+1)));
+							Serializer.write(new Payload(ConnectFlag.TERMINATE, (int)payload.getData()+1)));
     				Result result=mainRUDP.sendReliableMessage(reply, remoteEndpoint, null, null);
     				if(result.getFlag()==Result.RECEIVED){
         				isConnectEnd=true;
@@ -252,9 +254,9 @@ public class CentralController extends AbstractController{
 		if(this.testConnect(remoteUserId)){
 			int varifyNum=Math.abs((new Random()).nextInt());		// generate random number for authentication
 			Payload payload=new Payload(ConnectFlag.ESTABLISH,varifyNum);
-			Message message=new Message(userId,Event.CONNECT,Serialization.serialize(payload));						
+			Message message=new Message(userId,Event.CONNECT,Serializer.write(payload));						
 			Handler handler= (reply)->{
-					return (int)((Payload)Serialization.deserialize(reply.getPayload())).getData()==(varifyNum+1);
+					return (int)((Payload)Serializer.read(reply.getPayload(),Payload.class)).getData()==(varifyNum+1);
 			};
 			Result result=mainRUDP.sendReliableMessage(message, remoteEndpoint, null, handler);
 			if(result.getFlag()==Result.REPLIED && (boolean)result.getData()){
@@ -272,9 +274,9 @@ public class CentralController extends AbstractController{
 	public boolean disconnect(){		
 		int varifyNum=Math.abs((new Random()).nextInt());
 		Payload payload=new Payload(ConnectFlag.TERMINATE,varifyNum);
-		Message message=new Message(userId,Event.CONNECT,Serialization.serialize(payload));				
+		Message message=new Message(userId,Event.CONNECT,Serializer.write(payload));						
 		Handler handler= (reply)->{
-				return (int)((Payload)Serialization.deserialize(reply.getPayload())).getData()==(varifyNum+1);
+				return (int)((Payload)Serializer.read(reply.getPayload(),Payload.class)).getData()==(varifyNum+1);
 		};
 		Result result=mainRUDP.sendReliableMessage(message, remoteEndpoint, null, handler);	
 		if(result.getFlag()==Result.REPLIED && (boolean)result.getData()){

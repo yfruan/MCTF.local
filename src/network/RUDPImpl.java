@@ -32,7 +32,6 @@ import java.util.concurrent.Future;
 
 import log.MessageLog;
 import network.address.Endpoint;
-import network.assist.Serialization;
 import network.assist.Serializer;
 import network.protocol.Message;
 
@@ -62,7 +61,7 @@ public class RUDPImpl implements Runnable{
     // default reliable configuration
     private final static int ACK_TIMEOUT=5000;
     private final static int REPLY_TIMEOUT=45000;
-    private final static int RESEND_NUM=3;
+    private final static int RESEND_NUM=2;
     private ReliableConfiguration defaultConfig=new ReliableConfiguration(ACK_TIMEOUT,REPLY_TIMEOUT,RESEND_NUM);
 
     /**
@@ -76,8 +75,8 @@ public class RUDPImpl implements Runnable{
 		this.reactor=new Reactor();
         try {
 			this.socket = new DatagramSocket(this.port);
-			//this.executorService = Executors.newFixedThreadPool(20);
-			 this.executorService = Executors.newCachedThreadPool();
+			this.executorService = Executors.newFixedThreadPool(10);
+			 //this.executorService = Executors.newCachedThreadPool();
 		} catch (SocketException e) {
 			e.printStackTrace();
 		}
@@ -126,7 +125,7 @@ public class RUDPImpl implements Runnable{
         	try {
 				socket.receive(receivedPacket);
 	        	//System.out.println("Message received");
-            	Message message=(Message) Serialization.deserialize(receivedPacket.getData());
+            	Message message=(Message) Serializer.read(receivedPacket.getData(),Message.class);
             	
        		 	// log received messages
        		 	MessageLog.info(MessageLog.RECEIVED, message);
@@ -200,21 +199,7 @@ public class RUDPImpl implements Runnable{
 					
 					int messageId=message.getId();
 					
-					
-					//byte tempBuffer[]=Serialization.serialize(message);          
-
-					long testStartTime=System.currentTimeMillis();
-					byte tempBuffer[]=Serialization.serialize(message);          
-					long timeNative=System.currentTimeMillis()-testStartTime;
-					
-					
-					testStartTime=System.currentTimeMillis();
-					byte testTempBuffer[]=Serializer.write(message);
-					long timeKryo=System.currentTimeMillis()-testStartTime;
-					
-					System.out.println("Test time:" + timeKryo/timeNative);
-					System.out.println("Test compression" + tempBuffer.length/testTempBuffer.length);
-					
+					byte tempBuffer[]=Serializer.write(message);					
 					
 					// send the message
 					DatagramPacket sendPacket = new DatagramPacket(tempBuffer, tempBuffer.length, receiver.getAddress(), receiver.getPort());		    				    		
@@ -287,7 +272,9 @@ public class RUDPImpl implements Runnable{
     	executorService.execute(new Runnable(){
     	    public void run() {
               	 try{	    				    		
-            		 byte tempBuffer[]=Serialization.serialize(message);
+            		 //byte tempBuffer[]=Serialization.serialize(message);
+            		 byte tempBuffer[]=Serializer.write(message);
+ 					 
             		 DatagramPacket sendPacket = new DatagramPacket(tempBuffer, tempBuffer.length, receiver.getAddress(), receiver.getPort());		    				    		
             		 
             		 // log sent messages
@@ -313,7 +300,8 @@ public class RUDPImpl implements Runnable{
     	executorService.execute(new Runnable(){
     	    public void run() {
               	 try{	    				    		
-              		 byte tempBuffer[]=Serialization.serialize(message);
+              		 //byte tempBuffer[]=Serialization.serialize(message);
+            		 byte tempBuffer[]=Serializer.write(message);
               		 while(!isStopped()){
               			 synchronized(keepAliveEndpoints){
               				 keepAliveEndpoints.forEach(endpoint->{

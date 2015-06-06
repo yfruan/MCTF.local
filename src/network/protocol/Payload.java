@@ -17,16 +17,36 @@ package network.protocol;
 
 import java.io.Serializable;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.KryoSerializable;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+
 /**
  * Message payload
  * @author Yifan Ruan (ry222ad@student.lnu.se)
  */
-public class Payload implements Serializable{
+public class Payload implements Serializable,KryoSerializable{
 	private static final long serialVersionUID = 1L;
 	
 	private int flag;    
 	private Object data;
+	
+
+	@Override
+	public void read(Kryo kryo, Input input) {
+		this.flag=input.readInt();
+		this.data=kryo.readClassAndObject(input);
+	}
+
+	@Override
+	public void write(Kryo kryo, Output output) {
+		output.writeInt(flag);
+		kryo.writeClassAndObject(output, data);
+	}
 		
+	public Payload(){}
+	
 	/**
 	 * Constructor
 	 * @param flage  the flag, identifying how to deal with the data
@@ -60,4 +80,5 @@ public class Payload implements Serializable{
 	public Object getData() {
 		return data;
 	}
+
 }

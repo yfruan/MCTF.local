@@ -56,7 +56,7 @@ public class STUNServerClient {
 	public boolean register(InetAddress hostAddress, int hostPort){
 		Endpoint endpoint=new Endpoint(hostAddress,hostPort);
 		Payload payload=new Payload(STUNFlag.REGISTER,endpoint); 
-		Message message=new Message(userId,Event.STUN,Serialization.serialize(payload));
+		Message message=new Message(userId,Event.STUN,Serializer.write(payload));
 		Result result=this.rudpImpl.sendReliableMessage(message,STUNServerEndpoint,null,null);
 		return result.getFlag()==Result.RECEIVED;
 	}
@@ -66,7 +66,7 @@ public class STUNServerClient {
 	 * @return true if success else false
 	 */
 	public boolean unregister(){
-		Message message=new Message(userId,Event.STUN,Serialization.serialize(new Payload(STUNFlag.UNREGISTER,null)));
+		Message message=new Message(userId,Event.STUN,Serializer.write(new Payload(STUNFlag.UNREGISTER,null)));
 		Result result=this.rudpImpl.sendReliableMessage(message,STUNServerEndpoint,null,null);
 		return result.getFlag()==Result.RECEIVED;
 	}
@@ -88,9 +88,9 @@ public class STUNServerClient {
 	 * @return returned list of network endpoints
 	 */
 	public NetworkInfo[] getInfo(String[] remoteUserIds){
-		Message message=new Message(userId,Event.STUN,Serialization.serialize(new Payload(STUNFlag.GETINFO,remoteUserIds)));
+		Message message=new Message(userId,Event.STUN,Serializer.write(new Payload(STUNFlag.GETINFO,remoteUserIds)));
 		Handler handler= (reply)->{			
-	    	Payload payload= (Payload)Serialization.deserialize(reply.getPayload());
+	    	Payload payload= (Payload)Serializer.read(reply.getPayload(),Payload.class);
 			if(payload.getFlag()==STUNFlag.GETINFO){
 				return payload.getData();
 			}

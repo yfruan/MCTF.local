@@ -177,6 +177,7 @@ public class VideoController extends AbstractController{
 						    writer.dispose(); 	
 						    
 							byte tempBuffer[]=out.toByteArray();
+														
 							out.flush();											    					    
 							out.close();
 							sendMessage(Event.VIDEO,tempBuffer);

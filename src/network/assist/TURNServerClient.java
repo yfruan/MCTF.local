@@ -46,9 +46,9 @@ public class TURNServerClient {
 	 * @return true if success else false
 	 */
 	public boolean relay(Endpoint remoteEndpoint){
-		Message message=new Message(userId,Event.TURN,Serialization.serialize(new Payload(TURNFlag.RELAY,remoteEndpoint)));
+		Message message=new Message(userId,Event.TURN,Serializer.write(new Payload(TURNFlag.RELAY,remoteEndpoint)));
 		Handler handler= (reply)->{
-	    	Payload payload= (Payload)Serialization.deserialize(reply.getPayload());
+	    	Payload payload= (Payload)Serializer.read(reply.getPayload(),Payload.class);
 			if(payload.getFlag()==TURNFlag.RELAY){
 				return payload.getData();
 			}
@@ -63,7 +63,7 @@ public class TURNServerClient {
 	 * @return true if success else false
 	 */
 	public boolean unrelay(){
-		Message message=new Message(userId,Event.TURN,Serialization.serialize(new Payload(TURNFlag.UNRELAY,null)));
+		Message message=new Message(userId,Event.TURN,Serializer.write(new Payload(TURNFlag.UNRELAY,null)));
 		Result result=this.rudpImpl.sendReliableMessage(message,TURNServerEndpoint,null,null);
 		return result.getFlag()==Result.RECEIVED;
 	}
