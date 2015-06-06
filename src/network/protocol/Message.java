@@ -41,6 +41,9 @@ public class Message implements Serializable{
 	
 	private static AtomicInteger count=new AtomicInteger(0);   // message number count
 	
+	
+	public Message(){}
+	
 	/**
 	 * Constructor
 	 * @param senderId the sender id

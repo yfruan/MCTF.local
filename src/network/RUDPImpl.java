@@ -33,6 +33,7 @@ import java.util.concurrent.Future;
 import log.MessageLog;
 import network.address.Endpoint;
 import network.assist.Serialization;
+import network.assist.Serializer;
 import network.protocol.Message;
 
 /**
@@ -198,7 +199,23 @@ public class RUDPImpl implements Runnable{
 					message.setReliable();
 					
 					int messageId=message.getId();
-					byte tempBuffer[]=Serialization.serialize(message);           		 	
+					
+					
+					//byte tempBuffer[]=Serialization.serialize(message);          
+
+					long testStartTime=System.currentTimeMillis();
+					byte tempBuffer[]=Serialization.serialize(message);          
+					long timeNative=System.currentTimeMillis()-testStartTime;
+					
+					
+					testStartTime=System.currentTimeMillis();
+					byte testTempBuffer[]=Serializer.write(message);
+					long timeKryo=System.currentTimeMillis()-testStartTime;
+					
+					System.out.println("Test time:" + timeKryo/timeNative);
+					System.out.println("Test compression" + tempBuffer.length/testTempBuffer.length);
+					
+					
 					// send the message
 					DatagramPacket sendPacket = new DatagramPacket(tempBuffer, tempBuffer.length, receiver.getAddress(), receiver.getPort());		    				    		
 					
